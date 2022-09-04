@@ -6,6 +6,7 @@
   "license": "UNLICENSE",
   "devDependencies": {
     "@types/node": "^16.11.56",
+    "@types/react": "^18.0.18",
     "@typescript-eslint/eslint-plugin": "^5.36.1",
     "@typescript-eslint/parser": "^5.36.1",
     "eslint": "8.22.0",
@@ -16,15 +17,25 @@
     "typescript": "^4.8.2"
   },
   "scripts": {
-    "build": "tsup",
+    "build": "tsup && next build",
     "watch": "tsup --watch",
-    "start": "node dist/index.js",
-    "dev": "tsup --watch --onSuccess \"node ./dist/index.mjs\"",
-    "format": "prettier --write \"src/**/*.ts\""
+    "dev": "tsup --watch --onSuccess \"node ./dist/index.js\"",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "start": "cross-env NODE_ENV=production node dist/index.js"
   },
   "dependencies": {
     "@breejs/later": "^4.1.0",
+    "@emotion/react": "^11.10.4",
+    "@emotion/styled": "^11.10.4",
+    "@mui/lab": "^5.0.0-alpha.97",
+    "@mui/material": "^5.10.3",
+    "@tanstack/react-query": "^4.2.3",
+    "axios": "^0.27.2",
     "bree": "^9.1.2",
-    "got": "^12.4.1"
+    "fastify": "^4.5.3",
+    "next": "^12.2.5",
+    "node-fetch": "2",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
   }
 }

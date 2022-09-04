@@ -1,20 +1,17 @@
 import Bree from 'bree'
 import path from 'path'
-
-// import later from '@breejs/later'
-
-// console.log(later.parse.text('at 12:15 am'))
+import { startServer } from './server'
 
 const main = async () => {
   console.log('trolling shall commence')
 
   const bree = new Bree({
     root: path.resolve('dist', 'jobs'),
-    defaultExtension: 'mjs',
+    defaultExtension: 'js',
     jobs: [
       {
         name: 'sendMessage',
-        interval: 'every 555 seconds',
+        interval: 'every 50 days',
         worker: {
           workerData: {
             message: 'jekutus 2000'
@@ -28,3 +25,4 @@ const main = async () => {
 }
 
 void main()
+startServer()

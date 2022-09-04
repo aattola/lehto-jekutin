@@ -1,8 +1,8 @@
-import { got } from 'got'
+import fetch from 'node-fetch'
 import { workerData } from 'worker_threads'
 
 async function sendMessage(message: string) {
-  await got.get(`https://lukkari.jeffe.co/api/wilma/jekutalehtoa?p=${message}`).json()
+  await fetch(`https://lukkari.jeffe.co/api/wilma/jekutalehtoa?p=${message}`)
   process.exit(0)
 }
 
