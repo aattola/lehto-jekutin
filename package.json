@@ -1,0 +1,30 @@
+{
+  "name": "troll",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "author": "@jeffe",
+  "license": "UNLICENSE",
+  "devDependencies": {
+    "@types/node": "^16.11.56",
+    "@typescript-eslint/eslint-plugin": "^5.36.1",
+    "@typescript-eslint/parser": "^5.36.1",
+    "eslint": "8.22.0",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-plugin-prettier": "^4.2.1",
+    "prettier": "^2.7.1",
+    "tsup": "^6.2.3",
+    "typescript": "^4.8.2"
+  },
+  "scripts": {
+    "build": "tsup",
+    "watch": "tsup --watch",
+    "start": "node dist/index.js",
+    "dev": "tsup --watch --onSuccess \"node ./dist/index.mjs\"",
+    "format": "prettier --write \"src/**/*.ts\""
+  },
+  "dependencies": {
+    "@breejs/later": "^4.1.0",
+    "bree": "^9.1.2",
+    "got": "^12.4.1"
+  }
+}
