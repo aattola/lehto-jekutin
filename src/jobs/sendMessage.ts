@@ -1,10 +1,13 @@
 import fetch from 'node-fetch'
-import { workerData } from 'worker_threads'
+import { Agenda, Job } from '@hokify/agenda'
 
-async function sendMessage(message: string) {
-  await fetch(`https://lukkari.jeffe.co/api/wilma/jekutalehtoa?p=${message}`)
-  process.exit(0)
+function initSendMessage(agenda: Agenda) {
+  agenda.define('sendMessage', async (job: Job, done) => {
+    console.log(job.attrs.data?.message)
+    const res = await fetch('https://api.jeffe.co/projects')
+    await res.json()
+    return done()
+  })
 }
 
-// void sendMessage(workerData.message)
-console.log('muista ottaa komnetit pois')
+export { initSendMessage }

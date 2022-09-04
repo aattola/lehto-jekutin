@@ -1,28 +1,14 @@
-import Bree from 'bree'
-import path from 'path'
+// import Bree from 'bree'
 import { startServer } from './server'
+import * as dotenv from 'dotenv' // see https://github.com/motdotla/dotenv#how-do-i-use-dotenv-with-import
+import { getAgenda } from './agenda'
+dotenv.config()
 
 const main = async () => {
   console.log('trolling shall commence')
 
-  const bree = new Bree({
-    root: path.resolve('dist', 'jobs'),
-    defaultExtension: 'js',
-    jobs: [
-      {
-        name: 'sendMessage',
-        interval: 'every 50 days',
-        worker: {
-          workerData: {
-            message: 'jekutus 2000'
-          }
-        }
-      }
-    ]
-  })
-
-  await bree.start()
+  void getAgenda()
 }
 
+void startServer()
 void main()
-startServer()
