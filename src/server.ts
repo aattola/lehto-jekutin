@@ -3,7 +3,6 @@ import next from 'next'
 import { parse } from 'url'
 import { z } from 'zod'
 import { Job, Queue, QueueScheduler } from 'bullmq'
-// import { getAgenda } from './agenda'
 import humanInterval from 'human-interval'
 import { registerWorker } from './jobs/sendMessage'
 import { connection } from './redis'
@@ -16,7 +15,9 @@ import axios from 'axios'
 const Tallenna = z.object({
   intervalText: z.string().min(1),
   toistuva: z.enum(['toistuva', 'eitoistuva', 'nyt']),
-  viesti: z.string().min(1)
+  viesti: z.string().min(1),
+  cron: z.enum(['on', 'ei']),
+  limit: z.number().min(1).max(5000)
 })
 
 const Id = z.object({
@@ -79,13 +80,20 @@ async function startServer() {
       job = await messageQueue.add(
         'sendMessage',
         { message },
-        {
-          delay: parsedMs,
-          repeat: {
-            every: parsedMs,
-            limit: 1000
-          }
-        }
+        res.data.cron == 'on'
+          ? {
+              repeat: {
+                pattern: res.data.intervalText,
+                limit: res.data.limit
+              }
+            }
+          : {
+              delay: parsedMs,
+              repeat: {
+                every: parsedMs,
+                limit: res.data.limit
+              }
+            }
       )
     }
 

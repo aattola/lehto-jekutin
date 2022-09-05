@@ -9,13 +9,11 @@ async function registerWorker() {
     'sendMessage',
     async (job: Job) => {
       await job.log(`Viesti ${job.data.message}`)
-      // const res = await fetch(`${process.env.SALAINEN_OSOITE}&message=${job.data.message}`)
-      // const data = await res.json()
+      const res = await fetch(`${process.env.SALAINEN_OSOITE}&message=${job.data.message}`)
+      const data = await res.json()
       await job.updateProgress(100)
 
-      console.log('oon tää kissa')
-
-      return 'data'
+      return data
     },
     {
       connection

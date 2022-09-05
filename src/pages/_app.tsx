@@ -3,6 +3,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AppProps } from 'next/app'
 
 import '../components/global.css'
+import 'react-js-cron/dist/styles.css'
+import 'antd/dist/antd.css'
 
 function MyApp({ Component, pageProps }: AppProps) {
   // This ensures that data is not shared

@@ -1,7 +1,6 @@
 import React, { useState } from 'react'
 import prettyMilliseconds from 'pretty-ms'
 import humanInterval from 'human-interval'
-
 import {
   Alert,
   FormControl,
@@ -13,12 +12,13 @@ import {
   TextField,
   Typography
 } from '@mui/material'
-
 import LoadingButton from '@mui/lab/LoadingButton'
 import styled from '@emotion/styled'
 import { useMutation } from '@tanstack/react-query'
 import axios from 'axios'
 import Head from 'next/head'
+import { Cron } from 'react-js-cron'
+import 'react-js-cron/dist/styles.css'
 
 const Grid = styled.div`
   display: grid;
@@ -37,6 +37,7 @@ const Paperi = styled(Paper)`
   && {
     margin: 15px 10px;
     padding: 15px;
+    max-width: 420px;
   }
 `
 
@@ -54,9 +55,12 @@ const LogoDiv = styled.div`
 `
 
 export default function Home() {
-  const [intervalText, setText] = useState('')
   const [value, setValue] = useState('toistuva')
+  const [isCron, setIsCron] = useState('ei')
   const [viesti, setViesti] = useState('')
+  const [cron, setCron] = useState('')
+  const [limit, setLimit] = useState(1000)
+
   // const lista = useQuery(['lista'], fetchList, { refetchInterval: 10000 })
   const mutation = useMutation(
     (newMessage: any) => {
@@ -64,9 +68,10 @@ export default function Home() {
     },
     {
       onSuccess: () => {
-        setText('')
+        setCron('')
         setValue('')
         setViesti('')
+        setIsCron('ei')
       }
     }
   )
@@ -75,10 +80,18 @@ export default function Home() {
     setValue((event.target as HTMLInputElement).value)
   }
 
+  const handleCronChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const val = (event.target as HTMLInputElement).value
+    setIsCron(val)
+    if (val === 'on') {
+      setValue('toistuva')
+    }
+  }
+
   // const parsedText = later.parse.text(intervalText)
-  const parsedText = isNaN(humanInterval(intervalText) as number)
-  const error = parsedText
-  const submitError = parsedText || intervalText === '' || viesti === ''
+  const parsedText = isNaN(humanInterval(cron) as number)
+  const error = isCron === 'on' ? false : parsedText
+  const submitError = error || cron === '' || viesti === ''
   const mutationError = mutation.isError
 
   return (
@@ -88,7 +101,7 @@ export default function Home() {
       </Head>
 
       <Grid>
-        <Paperi elevation={4} sx={{ borderRadius: 2, overflow: 'hidden' }}>
+        <Paperi elevation={4} sx={{ borderRadius: 2, overflowY: 'scroll' }}>
           <Flex>
             <LogoDiv>
               <img
@@ -110,16 +123,18 @@ export default function Home() {
             <TextField
               error={error}
               type="text"
-              value={intervalText}
-              onChange={(e) => setText(e.target.value)}
+              value={cron}
+              onChange={(e) => setCron(e.target.value)}
               variant="outlined"
               size="small"
               label="Cron tai teksti"
               helperText={
-                !error && `Eli siis ${prettyMilliseconds(humanInterval(intervalText) || 0)} päästä`
+                !error && `Eli siis ${prettyMilliseconds(humanInterval(cron) || 0)} päästä`
               }
               sx={{ minWidth: 300 }}
             />
+
+            {isCron == 'on' && <Cron value={cron} setValue={setCron} />}
 
             <TextField
               type="text"
@@ -133,6 +148,17 @@ export default function Home() {
               sx={{ minWidth: 300 }}
             />
 
+            {value === 'toistuva' && (
+              <TextField
+                type="number"
+                value={limit}
+                onChange={(e) => setLimit(e.target.value as unknown as number)}
+                variant="outlined"
+                label="Montako kertaa. (Loop)"
+                sx={{ minWidth: 300 }}
+              />
+            )}
+
             <FormControl>
               <FormLabel id="demo-controlled-radio-buttons-group">Toistetaanko?</FormLabel>
               <RadioGroup
@@ -143,8 +169,32 @@ export default function Home() {
                 row
               >
                 <FormControlLabel value="toistuva" control={<Radio />} label="Toistuva" />
-                <FormControlLabel value="eitoistuva" control={<Radio />} label="Ei toistuva" />
-                <FormControlLabel value="nyt" control={<Radio />} label="Suorita nyt" />
+                <FormControlLabel
+                  disabled={isCron == 'on'}
+                  value="eitoistuva"
+                  control={<Radio />}
+                  label="Ei toistuva"
+                />
+                <FormControlLabel
+                  disabled={isCron == 'on'}
+                  value="nyt"
+                  control={<Radio />}
+                  label="Suorita nyt"
+                />
+              </RadioGroup>
+            </FormControl>
+
+            <FormControl>
+              <FormLabel id="demo-controlled-radio-buttons-group">Cron?</FormLabel>
+              <RadioGroup
+                aria-labelledby="demo-controlled-radio-buttons-group"
+                name="controlled-radio-buttons-group"
+                value={isCron}
+                onChange={handleCronChange}
+                row
+              >
+                <FormControlLabel value="on" control={<Radio />} label="On" />
+                <FormControlLabel value="ei" control={<Radio />} label="Ei" />
               </RadioGroup>
             </FormControl>
 
@@ -155,9 +205,11 @@ export default function Home() {
               color={mutationError ? 'error' : 'primary'}
               onClick={() => {
                 mutation.mutate({
-                  intervalText,
+                  intervalText: cron,
                   toistuva: value,
-                  viesti
+                  viesti,
+                  cron: isCron,
+                  limit: Number(limit)
                 })
               }}
             >

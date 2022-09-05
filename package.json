@@ -24,6 +24,7 @@
     "start": "cross-env NODE_ENV=production node dist/index.js"
   },
   "dependencies": {
+    "@ant-design/icons": "^4.7.0",
     "@breejs/later": "^4.1.0",
     "@bull-board/api": "^4.2.2",
     "@bull-board/fastify": "^4.2.2",
@@ -33,6 +34,7 @@
     "@mui/lab": "^5.0.0-alpha.97",
     "@mui/material": "^5.10.3",
     "@tanstack/react-query": "^4.2.3",
+    "antd": "^4.23.0",
     "axios": "^0.27.2",
     "bree": "^9.1.2",
     "bullmq": "^1.90.1",
@@ -48,6 +50,7 @@
     "pretty-ms": "^8.0.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-js-cron": "^2.1.2",
     "zod": "^3.18.0"
   }
 }
