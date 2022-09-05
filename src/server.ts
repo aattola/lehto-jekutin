@@ -54,19 +54,7 @@ async function startServer() {
     }
     const parsedMs = humanInterval(res.data.intervalText)
     let job
-    let message = res.data.viesti
-
-    const meals = await axios.get('https://lukkari.jeffe.co/api/meals')
-    const hassuCustomTimestampKiitosJamixOY = format(new Date(), 'yyyyMMdd')
-
-    const today = meals.data.meals.filter(
-      (meal: { date: string }) => meal.date == hassuCustomTimestampKiitosJamixOY
-    )[0]
-
-    if (today) {
-      const ruoka = today.mealoptions[0].menuItems[0].name
-      message = message.replace('{{ruoka}}', ruoka)
-    }
+    const message = res.data.viesti
 
     if (res.data.toistuva === 'nyt') {
       job = await messageQueue.add('sendMessage', { message })
