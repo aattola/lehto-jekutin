@@ -2,7 +2,16 @@ import fastify from 'fastify'
 import next from 'next'
 import { parse } from 'url'
 import { z } from 'zod'
-import { getAgenda } from './agenda'
+import { Job, Queue, QueueScheduler } from 'bullmq'
+// import { getAgenda } from './agenda'
+import humanInterval from 'human-interval'
+import { registerWorker } from './jobs/sendMessage'
+import { connection } from './redis'
+import { createBullBoard } from '@bull-board/api'
+import { BullMQAdapter } from '@bull-board/api/bullMQAdapter'
+import { FastifyAdapter } from '@bull-board/fastify'
+import { format } from 'date-fns'
+import axios from 'axios'
 
 const Tallenna = z.object({
   intervalText: z.string().min(1),
@@ -15,11 +24,25 @@ const Id = z.object({
 })
 
 async function startServer() {
-  const agenda = await getAgenda()
+  const messageQueue = new Queue('sendMessage', { connection })
+  new QueueScheduler('sendMessage', { connection })
+  await registerWorker()
+
   const app = next({ dev: process.env.NODE_ENV !== 'production' })
   const handle = app.getRequestHandler()
   const server = fastify()
   await app.prepare()
+
+  const serverAdapter = new FastifyAdapter()
+  createBullBoard({
+    queues: [new BullMQAdapter(messageQueue)],
+    serverAdapter
+  })
+
+  serverAdapter.setBasePath('/admin')
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
+  await server.register(serverAdapter.registerPlugin(), { prefix: '/admin' })
 
   server.post('/api/tallenna', async (req, reply) => {
     const res = Tallenna.safeParse(req.body)
@@ -28,59 +51,90 @@ async function startServer() {
       void reply.status(400)
       return { ...res.error }
     }
+    const parsedMs = humanInterval(res.data.intervalText)
+    let job
+    let message = res.data.viesti
+
+    const meals = await axios.get('https://lukkari.jeffe.co/api/meals')
+    const hassuCustomTimestampKiitosJamixOY = format(new Date(), 'yyyyMMdd')
+
+    const today = meals.data.meals.filter(
+      (meal: { date: string }) => meal.date == hassuCustomTimestampKiitosJamixOY
+    )[0]
+
+    if (today) {
+      const ruoka = today.mealoptions[0].menuItems[0].name
+      message = message.replace('{{ruoka}}', ruoka)
+    }
 
     if (res.data.toistuva === 'nyt') {
-      await agenda.now('sendMessage', { message: res.data.viesti })
+      job = await messageQueue.add('sendMessage', { message })
     }
 
     if (res.data.toistuva === 'eitoistuva') {
-      await agenda.schedule(res.data.intervalText, 'sendMessage', { message: res.data.viesti })
+      job = await messageQueue.add('sendMessage', { message }, { delay: parsedMs })
     }
 
     if (res.data.toistuva === 'toistuva') {
-      await agenda.every(res.data.intervalText, 'sendMessage', { message: res.data.viesti })
+      job = await messageQueue.add(
+        'sendMessage',
+        { message },
+        {
+          delay: parsedMs,
+          repeat: {
+            every: parsedMs,
+            limit: 1000
+          }
+        }
+      )
     }
 
     return {
       message: 'success',
+      job,
       toistuva: res.data.toistuva
     }
   })
 
   server.get('/api/jobs', async () => {
-    const jobs = await agenda.jobs()
+    const jobs = await messageQueue.getJobs()
 
-    return { jobs: jobs.map((a) => a.toJson()) }
+    return { jobs: jobs }
   })
-
-  server.post('/api/purge', async () => {
-    const count = await agenda.purge()
-
-    return { count }
-  })
-
+  //
+  // server.post('/api/purge', async () => {
+  //   const count = await agenda.purge()
+  //
+  //   return { count }
+  // })
+  //
   server.post('/api/cancel', async (req, reply) => {
     const res = Id.safeParse(req.body)
     if (!res.success) {
       void reply.status(400)
       return { ...res.error }
     }
-    const count = await agenda.cancel({ _id: res.data.id as any })
+    const job = await Job.fromId(messageQueue, res.data.id)
+    if (!job) {
+      void reply.status(400)
+      return { error: 'notfound' }
+    }
+    const done = await job.remove()
 
-    return { count }
+    return { done }
   })
-
-  server.post('/api/start', async () => {
-    const started = await agenda.start()
-
-    return { started }
-  })
-
-  server.post('/api/stop', async () => {
-    const stopped = await agenda.stop()
-
-    return { stopped }
-  })
+  //
+  // server.post('/api/start', async () => {
+  //   const started = await agenda.start()
+  //
+  //   return { started }
+  // })
+  //
+  // server.post('/api/stop', async () => {
+  //   const stopped = await agenda.stop()
+  //
+  //   return { stopped }
+  // })
 
   server.all('*', (req, res) => {
     return handle(req.raw, res.raw, parse(req.url, true))
