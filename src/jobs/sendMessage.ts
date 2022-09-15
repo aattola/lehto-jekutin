@@ -11,6 +11,7 @@ async function registerWorker() {
     'sendMessage',
     async (job: Job) => {
       await job.log(`Viesti ${job.data.message}`)
+      await job.log(`Timestamp ${Date.now()}`)
 
       let viesti = job.data.message
       if (job.data.message.includes('{{ruoka}}')) {
@@ -34,7 +35,10 @@ async function registerWorker() {
       const data = await res.json()
       await job.updateProgress(100)
 
-      return data
+      return {
+        timestamp: Date.now(),
+        ...data
+      }
     },
     {
       connection
